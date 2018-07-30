@@ -11,6 +11,17 @@ def weights_init_normal(m):
         torch.nn.init.constant_(m.bias.data, 0.0)
 
 
+def load_or_init_models(m, opt):
+    if opt.netG != '':
+        m.load_state_dict(torch.load(opt.netG))
+    else:
+        m.apply(weights_init_normal)
+
+    return m
+
+
+
+
 ##############################
 #        Discriminator
 ##############################

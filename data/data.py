@@ -87,7 +87,7 @@ class FivekDataset(Dataset):
         # Data augmentation
         self.augmentations = [fliplr, flipud, rotate, random_crop]
         self.transform = self.create_transform()
-        self.transform_high_res = transforms.Compile([
+        self.transform_high_res = transforms.Compose([
             transforms.Resize(self.output_resolution, interpolation=2),
             transforms.ToTensor()
         ])
@@ -108,6 +108,7 @@ class FivekDataset(Dataset):
         np.random.seed(seed)
         random.seed(seed)
         edited_low_res = self.transform(edited_high_res)
+
         img_high_res = self.transform_high_res(img_high_res)
         edited_high_res = self.transform_high_res(edited_high_res)
         return img_high_res, img_low_res, edited_high_res, edited_low_res
@@ -120,7 +121,7 @@ class FivekDataset(Dataset):
                 transforms.RandomHorizontalFlip(p=0.5),
                 transforms.RandomVerticalFlip(p=0.5),
                 transforms.RandomRotation((0, 90)),
-                transforms.RandomResizedCrop(256, scale=(0.8, 1.0), ratio=(0.75, 1.3333333333333333),
+                transforms.RandomResizedCrop((256, 256), scale=(0.8, 1.0), ratio=(0.75, 1.3333333333333333),
                                              interpolation=2)
             ]
 
@@ -129,7 +130,7 @@ class FivekDataset(Dataset):
             trans = []
 
         trans.extend([
-            transforms.Resize(self.output_resolution, interpolation=2),
+            transforms.Resize((256, 256), interpolation=2),
             transforms.ToTensor(),
             # seems like they aren't normalizing...
             # transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
@@ -141,7 +142,7 @@ def create_loaders(args):
     kwargs = {'num_workers': args.workers, 'pin_memory': True} if args.cuda else {}
     train_loader = torch.utils.data.DataLoader(
         FivekDataset(args.train_data,
-                     output_resolution=args.imageSize,
+                     output_resolution=(args.img_height, args.img_width),
                      fliplr=args.fliplr,
                      flipud=args.flipud,
                      rotate=args.rotate,
@@ -151,7 +152,7 @@ def create_loaders(args):
         shuffle=True, **kwargs)
 
     test_loader = torch.utils.data.DataLoader(
-        FivekDataset(args.test_data, output_resolution=args.imageSize, train=False),
+        FivekDataset(args.test_data, output_resolution=(args.img_height, args.img_width), train=False),
         batch_size=args.batch_size,
         shuffle=True, **kwargs)
     return train_loader, test_loader
