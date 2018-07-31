@@ -17,12 +17,17 @@
 `ssh -p 1234 student1@localhost -o "UserKnownHostsFile=/dev/null" -o "StrictHostKeyChecking=no" -L 8888:localhost:8888`
 
 - run jupyter
-`student1@momo:~$ jupyter lab`
+```bash
+student1@momo:~$ tmux
+student1@momo:~$ source activate py36
+student1@momo:~$ jupyter lab
+```
 
 - copy the link from the output
-`        http://localhost:8889/?token=9f9f1fe167217fd2e8779efb45da5ff73c65c98bb04f31e8&token=9f9f1fe167217fd2e8779efb45da5ff73c65c98bb04f31e8`
+`http://localhost:8889/?token=9f9f1fe167217fd2e8779efb45da5ff73c65c98bb04f31e8&token=9f9f1fe167217fd2e8779efb45da5ff73c65c98bb04f31e8`
 
-- if the jupyter opens on a different port than 8888 you need to redo the proccess with the correct port
+- if the jupyter opens on a different port than 8888 you need to redo the proccess with the correct port.
+i.e. run ```$ ssh -p 1234 student1@localhost -o "UserKnownHostsFile=/dev/null" -o "StrictHostKeyChecking=no" -L <jupyter port>:localhost:<jupyter port>```
 
 - paste the link in the browser
 
