@@ -11,7 +11,7 @@ from tqdm import tqdm
 from data.data import create_loaders
 from general import setup_main, to_variables, ModelSaver, update_stats
 from models.patch_gan import Discriminator, load_or_init_models
-from models.pix2pix import DummyG as GeneratorUNet
+from models.networks import RetouchGenerator as GeneratorUNet
 
 
 def trainG(generator, discriminator, criterion_GAN, criterion_pixelwise, optimizer, data, lambda_pixel=100):
