@@ -1,7 +1,7 @@
 ### file transfer:
 
 - open a tunnel on a different terminal:
-`ssh -L 1234:172.17.158.31:22  nova.cs.tau.ac.il`
+`ssh -L 1234:172.17.130.88:22  nova.cs.tau.ac.il`
 
 - connect to the host (if needed):
 `ssh -p 1234 student1@localhost -o "UserKnownHostsFile=/dev/null" -o "StrictHostKeyChecking=no"`
@@ -11,7 +11,7 @@
 
 ### open jupyter notebook
 - open a tunnel on a different terminal:
-`ssh -L 1234:172.17.158.31:22  nova.cs.tau.ac.il`
+`ssh -L 1234:172.17.130.88:22  nova.cs.tau.ac.il`
 
 - ssh to the machine with
 `ssh -p 1234 student1@localhost -o "UserKnownHostsFile=/dev/null" -o "StrictHostKeyChecking=no" -L 8888:localhost:8888`
