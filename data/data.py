@@ -78,7 +78,7 @@ class FivekDataset(Dataset):
 
         with open(self.path, 'r') as fid:
             flist = [l.strip() for l in fid.readlines()]
-        self.input_files = [os.path.join(dirname, 'input', f + ".tif") for f in flist]
+        self.input_files = [os.path.join(dirname, 'input', f + ".jpg") for f in flist]
         self.output_files = [os.path.join(dirname, 'output', f + ".jpg") for f in flist]
 
         self.train = train

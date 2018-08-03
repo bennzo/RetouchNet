@@ -1,13 +1,10 @@
-import random
 import time
-
 import os
 import torch
 import torch.nn as nn
 from collections import defaultdict
 from tensorboardX import SummaryWriter
 from tqdm import tqdm
-
 from data.data import create_loaders
 from general import setup_main, to_variables, ModelSaver, update_stats
 from models.patch_gan import Discriminator, load_or_init_models
@@ -114,12 +111,12 @@ def run(opt):
         ###
         avg_stats = defaultdict(float)
         for i, data in enumerate(train_loader):
-            data = to_variables(*data, cuda=opt.cuda)
+            data = to_variables(*data, cuda=None)
             y_hat, loss_G = trainG(generator, discriminator, criterion_GAN, criterion_pixelwise, optimizer_G, data)
             loss_D = trainD(discriminator, criterion_GAN, optimizer_D, data, y_hat)
 
         # Log Progress
-        str_out = '[train] {}/{} '.format(epoch, opt.epochs)
+        str_out = '[train] {}/{} '.format(epoch, opt.n_epochs)
         for k, v in avg_stats:
             avg = v / len(train_loader)
             train_writer.add_scalar(k, avg, epoch)
@@ -136,7 +133,7 @@ def run(opt):
             update_stats(avg_stats, losses)
 
         # Log Progress
-        str_out = '[test] {}/{} '.format(epoch, opt.epochs)
+        str_out = '[test] {}/{} '.format(epoch, opt.n_epochs)
         for k, v in avg_stats:
             avg = v / len(test_loader)
             test_writer.add_scalar(k, avg, epoch)
@@ -144,16 +141,16 @@ def run(opt):
         print(str_out)
 
         # If at sample interval save image
-        if epoch % opt.sample_interval == 0:
-            x_hr, x_lr, y_hr, y_lr = data
-            idx = random.randint(y_hr.size(0))
-            test_writer.add_image('RetouchNet', images[idx], epoch)
-            test_writer.add_image('GroundTruth', y_hr[idx], epoch)
-            test_writer.add_image('raw', x_hr[idx], epoch)
+        # if epoch % opt.sample_interval == 0:
+        #     x_hr, x_lr, y_hr, y_lr = data
+        #     idx = random.randint(y_hr.shape[0])
+        #     test_writer.add_image('RetouchNet', images[idx], epoch)
+        #     test_writer.add_image('GroundTruth', y_hr[idx], epoch)
+        #     test_writer.add_image('raw', x_hr[idx], epoch)
 
         if epoch % opt.checkpoint_interval == 0:
             # Save model checkpoints
-            saverG.save_if_best(generator, loss_G)
+            saverG.save_if_best(generator, loss_G['loss_G'])
             saverD.save_if_best(discriminator, loss_D)
 
 

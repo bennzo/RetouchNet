@@ -3,11 +3,12 @@ import torch.nn as nn
 from torch.autograd import Variable
 import math
 
+
 class RetouchGenerator(nn.Module):
     def __init__(self):
         super(RetouchGenerator, self).__init__()
 
-        self.device = torch.device('cuda:0')
+        self.device = torch.device('cpu')
 
         ## Define layers as described in the HDRNet architecture
         # Activation
@@ -92,13 +93,13 @@ class RetouchGenerator(nn.Module):
         guide = (guide / guide.max(2)[0].max(1)[0].unsqueeze(1).unsqueeze(2))*2 - 1
         bs, gh, gw = guide.shape
 
-        output = Variable(torch.zeros((bs, 3, gh, gw)), requires_grad=True).to(self.device)
+        output = torch.zeros((bs, 3, gh, gw)).to(self.device)
 
         # create xy meshgrid for bilateral grid slicing
         x = torch.linspace(-1, 1, gw)
         y = torch.linspace(-1, 1, gh)
-        x_t = x.repeat([gw,1]).to(self.device)
-        y_t = y.view(-1,1).repeat([1, gh]).to(self.device)
+        x_t = x.repeat([gh,1]).to(self.device)
+        y_t = y.view(-1,1).repeat([1, gw]).to(self.device)
         xy = torch.cat([x_t.unsqueeze(2), y_t.unsqueeze(2)], dim=2)
 
         for b in range(0,bs):
