@@ -12,8 +12,10 @@ def weights_init_normal(m):
 
 
 def load_or_init_models(m, opt):
-    if opt.netG != '':
+    if opt.netG != '' and type(m).__name__ == 'RetouchGenerator':
         m.load_state_dict(torch.load(opt.netG))
+    elif opt.netD != '' and type(m).__name__ == 'Discriminator':
+        m.load_state_dict(torch.load(opt.netD))
     else:
         m.apply(weights_init_normal)
 

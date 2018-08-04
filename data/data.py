@@ -45,12 +45,12 @@ def check_dir(dirname):
         log.error("Training dir {} does not exist".format(dirname))
         return False
     if not "filelist.txt" in fnames:
-        log.error("Training dir {} does not containt 'filelist.txt'".format(dirname))
+        log.error("Training dir {} does not contain 'filelist.txt'".format(dirname))
         return False
     if not "input" in fnames:
-        log.error("Training dir {} does not containt 'input' folder".format(dirname))
+        log.error("Training dir {} does not contain 'input' folder".format(dirname))
     if not "output" in fnames:
-        log.error("Training dir {} does not containt 'output' folder".format(dirname))
+        log.error("Training dir {} does not contain 'output' folder".format(dirname))
 
     return True
 
@@ -152,7 +152,10 @@ def create_loaders(args):
         shuffle=True, **kwargs)
 
     test_loader = torch.utils.data.DataLoader(
-        FivekDataset(args.test_data, output_resolution=(args.img_height, args.img_width), train=False),
+        FivekDataset(args.test_data,
+                     output_resolution=(args.img_height, args.img_width),
+                     train=False),
         batch_size=args.batch_size,
         shuffle=True, **kwargs)
+
     return train_loader, test_loader

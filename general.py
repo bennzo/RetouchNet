@@ -27,8 +27,8 @@ def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--epoch', type=int, default=0, help='epoch to start training from')
     parser.add_argument('--n_epochs', type=int, default=30, help='number of epochs of training')
-    parser.add_argument('--train-data', type=str, required=True, help='name of the dataset')
-    parser.add_argument('--test-data', type=str, required=True, help='name of the dataset')
+    parser.add_argument('--train-data', type=str, required=True, help='Train data filelist.txt path')
+    parser.add_argument('--test-data', type=str, required=True, help='Test data filelist.txt path')
     parser.add_argument('--checkpoint-dir', type=str, default='log', help='log dir')
     parser.add_argument('--name', type=str, default='retouchnet', help='name of the dataset')
     parser.add_argument('--lr', type=float, default=0.0002, help='adam: learning rate')
@@ -66,13 +66,16 @@ def parse_args():
 
 
 def setup_cuda(opt):
-    if torch.cuda.is_available() and not opt.no_cuda:
+    if torch.cuda.is_available() and opt.no_cuda:
         print("WARNING: You have a CUDA device, so you should probably run with --cuda")
 
     opt.cuda = torch.cuda.is_available() and not opt.no_cuda
 
     if opt.cuda:
+        opt.device = torch.device('cuda')
         torch.cuda.manual_seed_all(opt.manualSeed)
+    else:
+        opt.device = torch.device('cpu')
 
     cudnn.benchmark = True
     return opt
@@ -85,15 +88,16 @@ def seed_all(opt):
     torch.manual_seed(opt.manualSeed)
 
 
-def to_variables(*tensors, cuda=None, test=False, **kwargs):
+def to_variables(tensors, cuda=None, test=False, **kwargs):
     if cuda is None:
         cuda = torch.cuda.is_available()
 
-    for t in tensors:
-        if cuda:
-            t.cuda()
-        if test:
-            t.requires_grad = False
+    if cuda:
+        #with torch.cuda.device(0):
+        for i, t  in enumerate(tensors):
+            tensors[i] = t.cuda()
+            if test:
+                tensors[i].requires_grad = False
     return tensors
 
 
