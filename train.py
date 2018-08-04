@@ -2,7 +2,7 @@ import time
 import os
 import torch
 import torch.nn as nn
-from torch.autograd import Variable
+import random
 from collections import defaultdict
 from tensorboardX import SummaryWriter
 from tqdm import tqdm
@@ -136,6 +136,7 @@ def run(opt):
         # Test
         ###
         avg_stats = defaultdict(float)
+        images = None
         for i, data in enumerate(test_loader):
             data = to_variables(data, cuda=opt.cuda, test=True)
             images, losses = test(generator, discriminator, criterion_GAN, criterion_pixelwise, data, opt.device)
@@ -149,13 +150,13 @@ def run(opt):
             str_out += '{}: {:.6f}  '.format(k, avg)
         print(str_out)
 
-        # If at sample interval save image
-        # if epoch % opt.sample_interval == 0:
-        #     x_hr, x_lr, y_hr, y_lr = data
-        #     idx = random.randint(y_hr.shape[0])
-        #     test_writer.add_image('RetouchNet', images[idx], epoch)
-        #     test_writer.add_image('GroundTruth', y_hr[idx], epoch)
-        #     test_writer.add_image('raw', x_hr[idx], epoch)
+        #If at sample interval save image
+        if epoch % opt.sample_interval == 0:
+            x_hr, x_lr, y_hr, y_lr = data
+            idx = random.randint(0,y_hr.shape[0]-1)
+            test_writer.add_image('RetouchNet', images[idx], epoch)
+            test_writer.add_image('GroundTruth', y_hr[idx], epoch)
+            test_writer.add_image('raw', x_hr[idx], epoch)
 
         if epoch % opt.checkpoint_interval == 0:
             # Save model checkpoints

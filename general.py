@@ -93,7 +93,6 @@ def to_variables(tensors, cuda=None, test=False, **kwargs):
         cuda = torch.cuda.is_available()
 
     if cuda:
-        #with torch.cuda.device(0):
         for i, t  in enumerate(tensors):
             tensors[i] = t.cuda()
             if test:
