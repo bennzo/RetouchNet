@@ -10,10 +10,10 @@ from tqdm import tqdm
 from data.data import create_loaders
 from general import setup_main, to_variables, ModelSaver, update_stats
 from models.patch_gan import Discriminator, load_or_init_models
-from models.pix2pix import DummyG as GeneratorUNet
+from models.networks import RetouchGenerator
 
 
-def trainG(generator, discriminator, criterion_GAN, criterion_pixelwise, optimizer, data, lambda_pixel=100):
+def trainG(generator, discriminator, criterion_GAN, criterion_pixelwise, optimizer, data, opt, lambda_pixel=100):
     generator.train()
     discriminator.train()
     optimizer.zero_grad()
@@ -25,7 +25,7 @@ def trainG(generator, discriminator, criterion_GAN, criterion_pixelwise, optimiz
     pred_fake = discriminator(y_hat, x_hr)
 
     # Loss from discriminator
-    loss_GAN = criterion_GAN(pred_fake, torch.ones(pred_fake.size(), requires_grad=False).to(device))
+    loss_GAN = criterion_GAN(pred_fake, torch.ones(pred_fake.size(), requires_grad=False, device=opt.device))
 
     # Pixel-wise loss
     loss_pixel = criterion_pixelwise(y_hat, y_hr)
@@ -39,7 +39,7 @@ def trainG(generator, discriminator, criterion_GAN, criterion_pixelwise, optimiz
     return y_hat, {'loss_G': loss_G, 'loss_GAN': loss_GAN, 'loss_pixel': loss_pixel}
 
 
-def trainD(discriminator, criterion_GAN, optimizer, data, y_hat, device):
+def trainD(discriminator, criterion_GAN, optimizer, data, y_hat, opt):
     discriminator.train()
     optimizer.zero_grad()
 
@@ -47,11 +47,11 @@ def trainD(discriminator, criterion_GAN, optimizer, data, y_hat, device):
 
     # Real loss
     pred_real = discriminator(y_hr, x_hr)
-    loss_real = criterion_GAN(pred_real, torch.ones(pred_real.size(), requires_grad=False).to(device))
+    loss_real = criterion_GAN(pred_real, torch.ones(pred_real.size(), requires_grad=False, device=opt.device))
 
     # Fake loss
     pred_fake = discriminator(y_hat.detach(), x_hr)
-    loss_fake = criterion_GAN(pred_fake, torch.zeros(pred_fake.size(), requires_grad=False).to(device))
+    loss_fake = criterion_GAN(pred_fake, torch.zeros(pred_fake.size(), requires_grad=False, device=opt.device))
 
     # Total loss
     loss_D = 0.5 * (loss_real + loss_fake)
@@ -59,20 +59,21 @@ def trainD(discriminator, criterion_GAN, optimizer, data, y_hat, device):
     loss_D.backward()
     optimizer.step()
 
-    return loss_D
+    return {'loss_D': loss_D}
 
 
-def test(generator, discriminator, criterion_GAN, criterion_pixelwise, data, device, lambda_pixel=100):
+def test(generator, discriminator, criterion_GAN, criterion_pixelwise, data, opt, lambda_pixel=100):
     generator.eval()
     discriminator.eval()
     x_hr, x_lr, y_hr, y_lr = data
+
 
     # GAN loss
     y_hat = generator(x_hr, x_lr)
     pred_fake = discriminator(y_hat, x_hr)
 
     # Loss from discriminator
-    loss_GAN = criterion_GAN(pred_fake, torch.ones(pred_fake.size(), requires_grad=False).to(device))
+    loss_GAN = criterion_GAN(pred_fake, torch.ones(pred_fake.size(), requires_grad=False, device=opt.device))
 
     # Pixel-wise loss
     loss_pixel = criterion_pixelwise(y_hat, y_hr)
@@ -90,23 +91,24 @@ def run(opt):
     generator = load_or_init_models(RetouchGenerator(opt.device), opt)
     discriminator = load_or_init_models(Discriminator(), opt)
 
-    if opt.cuda:
-        generator = generator.cuda()
-        discriminator = discriminator.cuda()
-
     # Optimizers
     optimizer_G = torch.optim.Adam(generator.parameters(), lr=opt.lr, betas=(opt.b1, opt.b2))
     optimizer_D = torch.optim.Adam(discriminator.parameters(), lr=opt.lr, betas=(opt.b1, opt.b2))
 
     # Losses
-    criterion_GAN = torch.nn.MSELoss()
-    criterion_pixelwise = torch.nn.L1Loss()
+    # criterion_GAN = torch.nn.MSELoss()
+    # criterion_pixelwise = torch.nn.L1Loss()
 
-    # generator, discriminator, criterion_GAN, criterion_pixelwise = to_variables(generator,
-    #                                                                             discriminator,
-    #                                                                             torch.nn.MSELoss(),
-    #                                                                             torch.nn.L1Loss(),
-    #                                                                             cuda=opt.cuda)
+    # if opt.cuda:
+    #     generator = generator.cuda()
+    #     discriminator = discriminator.cuda()
+
+
+    generator, discriminator, criterion_GAN, criterion_pixelwise = to_variables((generator,
+                                                                                discriminator,
+                                                                                torch.nn.MSELoss(),
+                                                                                torch.nn.L1Loss()),
+                                                                                cuda=opt.cuda)
 
     saverG = ModelSaver(f'{opt.checkpoint_dir}/saved_models/{opt.name}')
     saverD = ModelSaver(f'{opt.checkpoint_dir}/saved_models/{opt.name}')
@@ -122,10 +124,13 @@ def run(opt):
         avg_stats = defaultdict(float)
         for i, data in enumerate(train_loader):
             data = to_variables(data, cuda=opt.cuda)
-            y_hat, loss_G = trainG(generator, discriminator, criterion_GAN, criterion_pixelwise, optimizer_G, data, opt.device)
-            loss_D = trainD(discriminator, criterion_GAN, optimizer_D, data, y_hat, opt.device)
+            y_hat, loss_G = trainG(generator, discriminator, criterion_GAN, criterion_pixelwise, optimizer_G, data, opt)
+            update_stats(avg_stats, loss_G)
+            loss_D = trainD(discriminator, criterion_GAN, optimizer_D, data, y_hat, opt)
+            update_stats(avg_stats, loss_D)
 
-        # Log Progress
+
+    # Log Progress
         str_out = '[train] {}/{} '.format(epoch, opt.n_epochs)
         for k, v in avg_stats:
             avg = v / len(train_loader)
@@ -140,7 +145,7 @@ def run(opt):
         images = None
         for i, data in enumerate(test_loader):
             data = to_variables(data, cuda=opt.cuda, test=True)
-            images, losses = test(generator, discriminator, criterion_GAN, criterion_pixelwise, data, opt.device)
+            images, losses = test(generator, discriminator, criterion_GAN, criterion_pixelwise, data, opt)
             update_stats(avg_stats, losses)
 
         # Log Progress
@@ -161,8 +166,8 @@ def run(opt):
 
         if epoch % opt.checkpoint_interval == 0:
             # Save model checkpoints
-            saverG.save_if_best(generator, loss_G)
-            saverD.save_if_best(discriminator, loss_D)
+            saverG.save_if_best(generator, loss_G['loss_G'])
+            saverD.save_if_best(discriminator, loss_D['loss_D'])
 
 
 if __name__ == '__main__':

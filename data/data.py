@@ -12,33 +12,6 @@ log = logging.getLogger("root")
 log.setLevel(logging.INFO)
 
 
-class ImageDataset(Dataset):
-    def __init__(self, dir_high_res, dir_edited, list_high_res, list_edited, low_res_init):
-        assert len(list_high_res) == len(list_edited), "Uneven number of photos and edited photos"
-
-        # Initialization
-        self.dir_high_res = dir_high_res
-        self.dir_edited = dir_edited
-        self.dir_low_res = dir_high_res + '_low_res'
-        self.list_high_res = list_high_res
-        self.list_edited = list_edited
-
-    def __len__(self):
-        return len(self.list_high_res)
-
-    def __getitem__(self, index):
-        # Select sample
-        id_high_res = self.list_high_res[index]
-        id_edited = self.list_edited[index]
-
-        # Load high-res photo and edited photo
-        img_high_res = torch.load(self.dir_high_res + '/' + id_high_res)
-        img_low_res = torch.load(self.dir_low_res + '/' + id_high_res)
-        img_edited = torch.load(self.dir_edited + '/' + id_edited)
-
-        return img_high_res, img_low_res, img_edited
-
-
 def check_dir(dirname):
     fnames = os.listdir(dirname)
     if not os.path.isdir(dirname):
@@ -78,7 +51,7 @@ class FivekDataset(Dataset):
 
         with open(self.path, 'r') as fid:
             flist = [l.strip() for l in fid.readlines()]
-        self.input_files = [os.path.join(dirname, 'input', f + ".jpg") for f in flist]
+        self.input_files = [os.path.join(dirname, 'input', f + ".tif") for f in flist]
         self.output_files = [os.path.join(dirname, 'output', f + ".jpg") for f in flist]
 
         self.train = train
@@ -159,3 +132,31 @@ def create_loaders(args):
         shuffle=True, **kwargs)
 
     return train_loader, test_loader
+
+
+class ImageDataset(Dataset):
+    def __init__(self, dir_high_res, dir_edited, list_high_res, list_edited, low_res_init):
+        assert len(list_high_res) == len(list_edited), "Uneven number of photos and edited photos"
+
+        # Initialization
+        self.dir_high_res = dir_high_res
+        self.dir_edited = dir_edited
+        self.dir_low_res = dir_high_res + '_low_res'
+        self.list_high_res = list_high_res
+        self.list_edited = list_edited
+
+    def __len__(self):
+        return len(self.list_high_res)
+
+    def __getitem__(self, index):
+        # Select sample
+        id_high_res = self.list_high_res[index]
+        id_edited = self.list_edited[index]
+
+        # Load high-res photo and edited photo
+        img_high_res = torch.load(self.dir_high_res + '/' + id_high_res)
+        img_low_res = torch.load(self.dir_low_res + '/' + id_high_res)
+        img_edited = torch.load(self.dir_edited + '/' + id_edited)
+
+        return img_high_res, img_low_res, img_edited
+

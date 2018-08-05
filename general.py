@@ -93,8 +93,8 @@ def to_variables(tensors, cuda=None, test=False, **kwargs):
         cuda = torch.cuda.is_available()
 
     if cuda:
-        for i, t  in enumerate(tensors):
-            tensors[i] = t.cuda()
+        for i, t in enumerate(tensors):
+            tensors[i].cuda()
             if test:
                 tensors[i].requires_grad = False
     return tensors
@@ -116,7 +116,6 @@ class ModelSaver:
 
 
 def update_stats(stats, measurments):
-    #for k, v in measurments:
-    for k,v in stats:
-        stats[k] += measurments[k]
+    for k, v in measurments.items():
+        stats[k] += v
     return stats
