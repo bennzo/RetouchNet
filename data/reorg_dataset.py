@@ -44,6 +44,7 @@ for f in files:
         shutil.move(expert_c + '/' + str(f.stem) + ".jpg", train_dir_output + '/' + str(f.stem) + ".jpg")
 
 with open(test_dir_input + '/../filelist.txt', 'w+') as fid:
+    print(fid)
     for f in map(lambda x: x.split('.')[0], os.listdir(test_dir_input)):
         print(f, file=fid)
 

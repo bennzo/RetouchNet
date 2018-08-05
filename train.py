@@ -6,13 +6,14 @@ import random
 from collections import defaultdict
 from tensorboardX import SummaryWriter
 from tqdm import tqdm
+
 from data.data import create_loaders
 from general import setup_main, to_variables, ModelSaver, update_stats
 from models.patch_gan import Discriminator, load_or_init_models
-from models.networks import RetouchGenerator
+from models.pix2pix import DummyG as GeneratorUNet
 
 
-def trainG(generator, discriminator, criterion_GAN, criterion_pixelwise, optimizer, data, device, lambda_pixel=100):
+def trainG(generator, discriminator, criterion_GAN, criterion_pixelwise, optimizer, data, lambda_pixel=100):
     generator.train()
     discriminator.train()
     optimizer.zero_grad()
@@ -150,17 +151,17 @@ def run(opt):
             str_out += '{}: {:.6f}  '.format(k, avg)
         print(str_out)
 
-        #If at sample interval save image
+        # If at sample interval save image
         if epoch % opt.sample_interval == 0:
             x_hr, x_lr, y_hr, y_lr = data
-            idx = random.randint(0,y_hr.shape[0]-1)
+            idx = random.randint(y_hr.size(0))
             test_writer.add_image('RetouchNet', images[idx], epoch)
             test_writer.add_image('GroundTruth', y_hr[idx], epoch)
             test_writer.add_image('raw', x_hr[idx], epoch)
 
         if epoch % opt.checkpoint_interval == 0:
             # Save model checkpoints
-            saverG.save_if_best(generator, loss_G['loss_G'])
+            saverG.save_if_best(generator, loss_G)
             saverD.save_if_best(discriminator, loss_D)
 
 
