@@ -108,12 +108,13 @@ def run(opt):
                                                                                 discriminator,
                                                                                 torch.nn.MSELoss(),
                                                                                 torch.nn.L1Loss()),
-                                                                                cuda=opt.cuda)
+                                                                                cuda=opt.cuda,
+                                                                                device=opt.device)
 
     saverG = ModelSaver(f'{opt.checkpoint_dir}/saved_models/{opt.name}')
     saverD = ModelSaver(f'{opt.checkpoint_dir}/saved_models/{opt.name}')
     train_writer = SummaryWriter(log_dir=os.path.join(opt.checkpoint_dir, 'train'))
-    test_writer = SummaryWriter(log_dir=os.path.join(opt.checkpoint_dir, 'train'))
+    test_writer = SummaryWriter(log_dir=os.path.join(opt.checkpoint_dir, 'test'))
     prev_time = time.time()
 
     for epoch in tqdm(range(opt.epoch, opt.n_epochs), desc='Training'):
@@ -123,7 +124,7 @@ def run(opt):
         ###
         avg_stats = defaultdict(float)
         for i, data in enumerate(train_loader):
-            data = to_variables(data, cuda=opt.cuda)
+            data = to_variables(data, cuda=opt.cuda, device=opt.device)
             y_hat, loss_G = trainG(generator, discriminator, criterion_GAN, criterion_pixelwise, optimizer_G, data, opt)
             update_stats(avg_stats, loss_G)
             loss_D = trainD(discriminator, criterion_GAN, optimizer_D, data, y_hat, opt)
@@ -132,7 +133,7 @@ def run(opt):
 
     # Log Progress
         str_out = '[train] {}/{} '.format(epoch, opt.n_epochs)
-        for k, v in avg_stats:
+        for k, v in avg_stats.items():
             avg = v / len(train_loader)
             train_writer.add_scalar(k, avg, epoch)
             str_out += '{}: {:.6f}  '.format(k, avg)
@@ -144,13 +145,13 @@ def run(opt):
         avg_stats = defaultdict(float)
         images = None
         for i, data in enumerate(test_loader):
-            data = to_variables(data, cuda=opt.cuda, test=True)
+            data = to_variables(data, cuda=opt.cuda, device=opt.device, test=True)
             images, losses = test(generator, discriminator, criterion_GAN, criterion_pixelwise, data, opt)
             update_stats(avg_stats, losses)
 
         # Log Progress
         str_out = '[test] {}/{} '.format(epoch, opt.n_epochs)
-        for k, v in avg_stats:
+        for k, v in avg_stats.items():
             avg = v / len(test_loader)
             test_writer.add_scalar(k, avg, epoch)
             str_out += '{}: {:.6f}  '.format(k, avg)
@@ -159,10 +160,9 @@ def run(opt):
         # If at sample interval save image
         if epoch % opt.sample_interval == 0:
             x_hr, x_lr, y_hr, y_lr = data
-            idx = random.randint(y_hr.size(0))
-            test_writer.add_image('RetouchNet', images[idx], epoch)
-            test_writer.add_image('GroundTruth', y_hr[idx], epoch)
-            test_writer.add_image('raw', x_hr[idx], epoch)
+            test_writer.add_image('RetouchNet', images[0], epoch)
+            test_writer.add_image('GroundTruth', y_hr[0], epoch)
+            test_writer.add_image('raw', x_hr[0], epoch)
 
         if epoch % opt.checkpoint_interval == 0:
             # Save model checkpoints

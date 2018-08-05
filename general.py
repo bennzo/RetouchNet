@@ -26,7 +26,7 @@ def setup_main():
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--epoch', type=int, default=0, help='epoch to start training from')
-    parser.add_argument('--n_epochs', type=int, default=30, help='number of epochs of training')
+    parser.add_argument('--n_epochs', type=int, default=300, help='number of epochs of training')
     parser.add_argument('--train-data', type=str, required=True, help='Train data filelist.txt path')
     parser.add_argument('--test-data', type=str, required=True, help='Test data filelist.txt path')
     parser.add_argument('--checkpoint-dir', type=str, default='log', help='log dir')
@@ -36,12 +36,12 @@ def parse_args():
     parser.add_argument('--b2', type=float, default=0.999, help='adam: decay of first order momentum of gradient')
     parser.add_argument('--decay_epoch', type=int, default=100, help='epoch from which to start lr decay')
     parser.add_argument('--n_cpu', type=int, default=8, help='number of cpu threads to use during batch generation')
-    parser.add_argument('--img_height', type=int, default=1080, help='size of image height')
-    parser.add_argument('--img_width', type=int, default=1920, help='size of image width')
+    parser.add_argument('--img_height', type=int, default=480, help='size of image height')
+    parser.add_argument('--img_width', type=int, default=720, help='size of image width')
     parser.add_argument('--channels', type=int, default=3, help='number of image channels')
     parser.add_argument('--sample_interval', type=int, default=10,
                         help='interval between sampling of images from generators')
-    parser.add_argument('--checkpoint_interval', type=int, default=500, help='interval between model checkpoints')
+    parser.add_argument('--checkpoint_interval', type=int, default=10, help='interval between model checkpoints')
     parser.add_argument('--manualSeed', type=int, default=1234, help='manual seed')
 
     # loading pretrained nets
@@ -57,7 +57,7 @@ def parse_args():
     # Data pipeline and data augmentation
     data_grp = parser.add_argument_group('data pipeline')
     data_grp.add_argument('--workers', type=int, help='number of data loading workers', default=4)
-    data_grp.add_argument('--batch_size', default=2, type=int, help='size of a batch for each gradient update.')
+    data_grp.add_argument('--batch_size', default=24, type=int, help='size of a batch for each gradient update.')
     data_grp.add_argument('--rotate', action="store_true", help='rotate data augmentation.')
     data_grp.add_argument('--flipud', action="store_true", help='flip up/down data augmentation.')
     data_grp.add_argument('--fliplr', action="store_true", help='flip left/right data augmentation.')
@@ -72,7 +72,7 @@ def setup_cuda(opt):
     opt.cuda = torch.cuda.is_available() and not opt.no_cuda
 
     if opt.cuda:
-        opt.device = torch.device('cuda')
+        opt.device = torch.device('cuda:0')
         torch.cuda.manual_seed_all(opt.manualSeed)
     else:
         opt.device = torch.device('cpu')
@@ -88,16 +88,16 @@ def seed_all(opt):
     torch.manual_seed(opt.manualSeed)
 
 
-def to_variables(tensors, cuda=None, test=False, **kwargs):
+def to_variables(tensors, cuda=None, device=None, test=False, **kwargs):
     if cuda is None:
         cuda = torch.cuda.is_available()
 
-    if cuda:
-        for i, t in enumerate(tensors):
-            tensors[i].cuda()
-            if test:
-                tensors[i].requires_grad = False
-    return tensors
+    variables = []
+    for i, t in enumerate(tensors):
+        variables.append(tensors[i].to(device))
+        if test:
+            variables[-1].requires_grad = False
+    return variables
 
 
 class ModelSaver:
