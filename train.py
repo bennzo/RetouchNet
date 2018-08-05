@@ -144,10 +144,11 @@ def run(opt):
         ###
         avg_stats = defaultdict(float)
         images = None
-        for i, data in enumerate(test_loader):
-            data = to_variables(data, cuda=opt.cuda, device=opt.device, test=True)
-            images, losses = test(generator, discriminator, criterion_GAN, criterion_pixelwise, data, opt)
-            update_stats(avg_stats, losses)
+        with torch.no_grad():
+            for i, data in enumerate(test_loader):
+                data = to_variables(data, cuda=opt.cuda, device=opt.device, test=True)
+                images, losses = test(generator, discriminator, criterion_GAN, criterion_pixelwise, data, opt)
+                update_stats(avg_stats, losses)
 
         # Log Progress
         str_out = '[test] {}/{} '.format(epoch, opt.n_epochs)

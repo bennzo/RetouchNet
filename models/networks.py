@@ -107,9 +107,9 @@ class RetouchGenerator(nn.Module):
             slice = nn.functional.grid_sample(bg[b:b+1], guide_aug)                                     # slice bilateral grid
 
             # assemble output
-            output[b,0,:,:] = slice[0,3,0] + slice[0,0,0]*high_res[b,0,:,:] + slice[0,1,0]*high_res[b,1,:,:] + slice[0,2,0]*high_res[b,2,:,:]
-            output[b,1,:,:] = slice[0,7,0] + slice[0,4,0]*high_res[b,0,:,:] + slice[0,5,0]*high_res[b,1,:,:] + slice[0,6,0]*high_res[b,2,:,:]
-            output[b,2,:,:] = slice[0,11,0] + slice[0,8,0]*high_res[b,0,:,:] + slice[0,9,0]*high_res[b,1,:,:] + slice[0,10,0]*high_res[b,2,:,:]
+            output[b,0,:,:] = slice[0,3,0] + slice[0,0,0]*high_res[b,0,:,:] + slice[0,1,0]*high_res[b,0,:,:] + slice[0,2,0]*high_res[b,0,:,:]
+            output[b,1,:,:] = slice[0,7,0] + slice[0,4,0]*high_res[b,1,:,:] + slice[0,5,0]*high_res[b,1,:,:] + slice[0,6,0]*high_res[b,1,:,:]
+            output[b,2,:,:] = slice[0,11,0] + slice[0,8,0]*high_res[b,2,:,:] + slice[0,9,0]*high_res[b,2,:,:] + slice[0,10,0]*high_res[b,2,:,:]
 
         return output
 

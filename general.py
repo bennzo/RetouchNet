@@ -31,7 +31,7 @@ def parse_args():
     parser.add_argument('--test-data', type=str, required=True, help='Test data filelist.txt path')
     parser.add_argument('--checkpoint-dir', type=str, default='log', help='log dir')
     parser.add_argument('--name', type=str, default='retouchnet', help='name of the dataset')
-    parser.add_argument('--lr', type=float, default=0.0002, help='adam: learning rate')
+    parser.add_argument('--lr', type=float, default=0.0001, help='adam: learning rate')
     parser.add_argument('--b1', type=float, default=0.5, help='adam: decay of first order momentum of gradient')
     parser.add_argument('--b2', type=float, default=0.999, help='adam: decay of first order momentum of gradient')
     parser.add_argument('--decay_epoch', type=int, default=100, help='epoch from which to start lr decay')
