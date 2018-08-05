@@ -26,7 +26,7 @@ def setup_main():
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--epoch', type=int, default=0, help='epoch to start training from')
-    parser.add_argument('--n_epochs', type=int, default=300, help='number of epochs of training')
+    parser.add_argument('--n_epochs', type=int, default=30, help='number of epochs of training')
     parser.add_argument('--train-data', type=str, required=True, help='Train data filelist.txt path')
     parser.add_argument('--test-data', type=str, required=True, help='Test data filelist.txt path')
     parser.add_argument('--checkpoint-dir', type=str, default='log', help='log dir')
@@ -57,7 +57,7 @@ def parse_args():
     # Data pipeline and data augmentation
     data_grp = parser.add_argument_group('data pipeline')
     data_grp.add_argument('--workers', type=int, help='number of data loading workers', default=4)
-    data_grp.add_argument('--batch_size', default=24, type=int, help='size of a batch for each gradient update.')
+    data_grp.add_argument('--batch_size', default=30, type=int, help='size of a batch for each gradient update.')
     data_grp.add_argument('--rotate', action="store_true", help='rotate data augmentation.')
     data_grp.add_argument('--flipud', action="store_true", help='flip up/down data augmentation.')
     data_grp.add_argument('--fliplr', action="store_true", help='flip left/right data augmentation.')
