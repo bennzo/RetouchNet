@@ -51,8 +51,7 @@ def parse_args():
     # GPU args
     parser.add_argument('--no-cuda', action='store_true', help='disables cuda')
     parser.add_argument('--ngpu', type=int, default=1, help='number of GPUs to use')
-    parser.add_argument('--gpu_id', nargs='+', type=int, default=0,
-                        help='gpu ids: e.g. 0  0 1 2  0,2. use -1 for CPU')
+    parser.add_argument('--gpu_id', default=0, help='gpu ids: e.g. 0  0 1 2  0,2. use -1 for CPU')
 
     # Data pipeline and data augmentation
     data_grp = parser.add_argument_group('data pipeline')
@@ -72,7 +71,7 @@ def setup_cuda(opt):
     opt.cuda = torch.cuda.is_available() and not opt.no_cuda
 
     if opt.cuda:
-        opt.device = torch.device('cuda:0')
+        opt.device = torch.device(f'cuda:{opt.gpu_id}')
         torch.cuda.manual_seed_all(opt.manualSeed)
     else:
         opt.device = torch.device('cpu')
