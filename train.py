@@ -106,8 +106,8 @@ def run(opt):
 
     generator, discriminator, criterion_GAN, criterion_pixelwise = to_variables((generator,
                                                                                 discriminator,
-                                                                                torch.nn.MSELoss(),
-                                                                                torch.nn.L1Loss()),
+                                                                                torch.nn.L1Loss(),
+                                                                                torch.nn.MSELoss()),
                                                                                 cuda=opt.cuda,
                                                                                 device=opt.device)
 

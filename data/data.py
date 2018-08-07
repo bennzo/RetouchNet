@@ -44,15 +44,22 @@ class FivekDataset(Dataset):
                  random_crop=False,
                  train=False):
 
-        dirname = os.path.dirname(path)
-        if not check_dir(dirname):
-            raise ValueError("Invalid data path.")
-        self.path = path
+        ## Use with reorg_dataset
+        # dirname = os.path.dirname(path)
+        # if not check_dir(dirname):
+        #     raise ValueError("Invalid data path.")
+        # self.path = path
 
-        with open(self.path, 'r') as fid:
-            flist = [l.strip() for l in fid.readlines()]
-        self.input_files = [os.path.join(dirname, 'input', f + ".jpg") for f in flist]
-        self.output_files = [os.path.join(dirname, 'output', f + ".jpg") for f in flist]
+        # with open(self.path, 'r') as fid:
+        #     flist = [l.strip() for l in fid.readlines()]
+        # self.input_files = [os.path.join(dirname, 'input', f + ".jpg") for f in flist]
+        # self.output_files = [os.path.join(dirname, 'output', f + ".jpg") for f in flist]
+
+        ## Use with reorg_dataset_new
+        with open(os.path.join(path,'filelist_input.txt'), 'r') as f:
+            self.input_files = f.read().splitlines()
+        with open(os.path.join(path,'filelist_output.txt'), 'r') as f:
+            self.output_files = f.read().splitlines()
 
         self.train = train
         self.output_resolution = output_resolution
