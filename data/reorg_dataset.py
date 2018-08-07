@@ -28,7 +28,7 @@ def organize_data(args):
 
     for f in files:
         f = Path(f)
-        if np.random.rand() < 0.2:
+        if np.random.rand() < 0.1:
             test.append(f)
             shutil.move(raw + '/' + str(f), test_dir_input + '/' + str(f))
             shutil.move(expert_c + '/' + str(f.stem) + ".jpg", test_dir_output + '/' + str(f.stem) + ".jpg")

@@ -2,7 +2,7 @@ import time
 import os
 import torch
 import torch.nn as nn
-import random
+import numpy as np
 from collections import defaultdict
 from tensorboardX import SummaryWriter
 from tqdm import tqdm
@@ -32,29 +32,6 @@ def trainG(generator, criterion_GAN, criterion_pixelwise, optimizer, data, opt, 
     optimizer.step()
 
     return y_hat, {'loss_G': loss_G, 'loss_pixel': loss_pixel}
-
-
-# def trainD(discriminator, criterion_GAN, optimizer, data, y_hat, opt):
-#     discriminator.train()
-#     optimizer.zero_grad()
-#
-#     x_hr, x_lr, y_hr, y_lr = data
-#
-#     # Real loss
-#     pred_real = discriminator(y_hr, x_hr)
-#     loss_real = criterion_GAN(pred_real, torch.ones(pred_real.size(), requires_grad=False, device=opt.device))
-#
-#     # Fake loss
-#     pred_fake = discriminator(y_hat.detach(), x_hr)
-#     loss_fake = criterion_GAN(pred_fake, torch.zeros(pred_fake.size(), requires_grad=False, device=opt.device))
-#
-#     # Total loss
-#     loss_D = 0.5 * (loss_real + loss_fake)
-#
-#     loss_D.backward()
-#     optimizer.step()
-#
-#     return {'loss_D': loss_D}
 
 
 def test(generator, criterion_pixelwise, data, opt, lambda_pixel=100):
@@ -116,6 +93,12 @@ def run(opt):
             y_hat, loss_G = trainG(generator, criterion_GAN, criterion_pixelwise, optimizer_G, data, opt)
             update_stats(avg_stats, loss_G)
 
+            # Print image to tensorboard
+            if (epoch % opt.sample_interval == 0) and (i % 50 == 0):
+                train_writer.add_image('RetouchNet', y_hat[0], epoch)
+                train_writer.add_image('GroundTruth', data[0][0], epoch)
+                train_writer.add_image('raw', data[2][0], epoch)
+
 
     # Log Progress
         str_out = '[train] {}/{} '.format(epoch, opt.n_epochs)
@@ -136,6 +119,12 @@ def run(opt):
                 images, losses = test(generator, criterion_pixelwise, data, opt)
                 update_stats(avg_stats, losses)
 
+                # Print image to tensorboard
+                if (epoch % opt.sample_interval == 0) and (i % 5 == 0):
+                    test_writer.add_image('RetouchNet', images[0], epoch)
+                    test_writer.add_image('GroundTruth', data[0][0], epoch)
+                    test_writer.add_image('raw', data[2][0], epoch)
+
         # Log Progress
         str_out = '[test] {}/{} '.format(epoch, opt.n_epochs)
         for k, v in avg_stats.items():
@@ -145,11 +134,11 @@ def run(opt):
         print(str_out)
 
         # If at sample interval save image
-        if epoch % opt.sample_interval == 0:
-            x_hr, x_lr, y_hr, y_lr = data
-            test_writer.add_image('RetouchNet', images[0], epoch)
-            test_writer.add_image('GroundTruth', y_hr[0], epoch)
-            test_writer.add_image('raw', x_hr[0], epoch)
+        # if epoch % opt.sample_interval == 0:
+        #     x_hr, x_lr, y_hr, y_lr = data
+        #     test_writer.add_image('RetouchNet', images[0], epoch)
+        #     test_writer.add_image('GroundTruth', y_hr[0], epoch)
+        #     test_writer.add_image('raw', x_hr[0], epoch)
 
         if epoch % opt.checkpoint_interval == 0:
             # Save model checkpoints
