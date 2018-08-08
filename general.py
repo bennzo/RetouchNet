@@ -71,10 +71,16 @@ def setup_cuda(opt):
     opt.cuda = torch.cuda.is_available() and not opt.no_cuda
 
     if opt.cuda:
+        print("WARNING: make sure you prepend \"CUDA_VISIBLE_DEVICES=<gpu_id>\" to your script to run on specified gpu")
+
         opt.device = torch.device(f'cuda:{opt.gpu_id}')
+        torch.cuda.set_device(opt.gpu_id)
         torch.cuda.manual_seed_all(opt.manualSeed)
+
+        print_cuda()
     else:
         opt.device = torch.device('cpu')
+        print('Active CUDA Device: GPU', torch.cuda.current_device())
 
     cudnn.benchmark = True
     return opt
@@ -118,3 +124,21 @@ def update_stats(stats, measurments):
     for k, v in measurments.items():
         stats[k] += v
     return stats
+
+
+def print_cuda():
+    import torch
+    import sys
+    print('__Python VERSION:', sys.version)
+    print('__pyTorch VERSION:', torch.__version__)
+    print('__CUDA VERSION')
+    from subprocess import call
+    call(["nvcc", "--version"])
+    print('__CUDNN VERSION:', torch.backends.cudnn.version())
+    print('__Number CUDA Devices:', torch.cuda.device_count())
+    print('__Devices')
+    call(["nvidia-smi", "--format=csv", "--query-gpu=index,name,driver_version,memory.total,memory.used,memory.free"])
+    print('Active CUDA Device: GPU', torch.cuda.current_device())
+
+    print('Available devices ', torch.cuda.device_count())
+    print('Current cuda device ', torch.cuda.current_device())
