@@ -80,7 +80,7 @@ def setup_cuda(opt):
         print_cuda()
     else:
         opt.device = torch.device('cpu')
-        print('Active CUDA Device: GPU', torch.cuda.current_device())
+        print('Active CUDA Device: CPU')
 
     cudnn.benchmark = True
     return opt
