@@ -13,7 +13,7 @@ from models.networks import RetouchGenerator
 from models.patch_gan import Discriminator, load_or_init_models
 
 
-def trainG(generator, discriminator, criterion_GAN, criterion_pixelwise, optimizer, data, opt, lambda_pixel=100):
+def trainG(generator, discriminator, criterion_GAN, criterion_pixelwise, optimizer, data, opt):
     generator.train()
     discriminator.train()
     optimizer.zero_grad()
@@ -31,7 +31,7 @@ def trainG(generator, discriminator, criterion_GAN, criterion_pixelwise, optimiz
     loss_pixel = criterion_pixelwise(y_hat, y_hr)
 
     # Total loss
-    loss_G = loss_GAN + lambda_pixel * loss_pixel
+    loss_G = loss_GAN + opt.loss_ratio * loss_pixel
 
     loss_G.backward()
     optimizer.step()
@@ -62,7 +62,7 @@ def trainD(discriminator, criterion_GAN, optimizer, data, y_hat, opt):
     return {'loss_D': loss_D}
 
 
-def test(generator, discriminator, criterion_GAN, criterion_pixelwise, data, opt, lambda_pixel=100):
+def test(generator, discriminator, criterion_GAN, criterion_pixelwise, data, opt):
     generator.eval()
     discriminator.eval()
     x_hr, x_lr, y_hr, y_lr = data
@@ -79,7 +79,7 @@ def test(generator, discriminator, criterion_GAN, criterion_pixelwise, data, opt
     loss_pixel = criterion_pixelwise(y_hat, y_hr)
 
     # Total loss
-    loss_G = loss_GAN + lambda_pixel * loss_pixel
+    loss_G = loss_GAN + opt.loss_ratio * loss_pixel
 
     return y_hat, {'loss_G': loss_G, 'loss_GAN': loss_GAN, 'loss_pixel': loss_pixel}
 
