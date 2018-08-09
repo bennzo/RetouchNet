@@ -74,7 +74,7 @@ def setup_cuda(opt):
         print("WARNING: make sure you prepend \"CUDA_VISIBLE_DEVICES=<gpu_id>\" to your script to run on specified gpu")
 
         opt.device = torch.device(f'cuda:{opt.gpu_id}')
-        torch.cuda.set_device(opt.gpu_id)
+        torch.cuda.set_device(int(opt.gpu_id))
         torch.cuda.manual_seed_all(opt.manualSeed)
 
         print_cuda()
@@ -133,7 +133,7 @@ def print_cuda():
     print('__pyTorch VERSION:', torch.__version__)
     print('__CUDA VERSION')
     from subprocess import call
-    call(["nvcc", "--version"])
+    # call(["nvcc", "--version"])
     print('__CUDNN VERSION:', torch.backends.cudnn.version())
     print('__Number CUDA Devices:', torch.cuda.device_count())
     print('__Devices')

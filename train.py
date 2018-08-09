@@ -1,16 +1,16 @@
 import time
+
 import os
 import torch
 import torch.nn as nn
-import random
 from collections import defaultdict
 from tensorboardX import SummaryWriter
 from tqdm import tqdm
 
 from data.data import create_loaders
 from general import setup_main, to_variables, ModelSaver, update_stats
-from models.patch_gan import Discriminator, load_or_init_models
 from models.networks import RetouchGenerator
+from models.patch_gan import Discriminator, load_or_init_models
 
 
 def trainG(generator, discriminator, criterion_GAN, criterion_pixelwise, optimizer, data, opt, lambda_pixel=100):
@@ -105,9 +105,9 @@ def run(opt):
 
 
     generator, discriminator, criterion_GAN, criterion_pixelwise = to_variables((generator,
-                                                                                discriminator,
-                                                                                torch.nn.MSELoss(),
-                                                                                torch.nn.L1Loss()),
+                                                                                 discriminator,
+                                                                                 torch.nn.BCEWithLogitsLoss(),
+                                                                                 torch.nn.L1Loss()),
                                                                                 cuda=opt.cuda,
                                                                                 device=opt.device)
 
