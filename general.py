@@ -34,6 +34,8 @@ def parse_args():
     parser.add_argument('--lr', type=float, default=0.0001, help='adam: learning rate')
     parser.add_argument('--b1', type=float, default=0.5, help='adam: decay of first order momentum of gradient')
     parser.add_argument('--b2', type=float, default=0.999, help='adam: decay of first order momentum of gradient')
+    parser.add_argument('--loss_ratio', type=float, default=100,
+                        help='ratio between patchgan and pixelwise losses. loss = loss_ratio*pixelwise + patchgan')
     parser.add_argument('--decay_epoch', type=int, default=100, help='epoch from which to start lr decay')
     parser.add_argument('--n_cpu', type=int, default=8, help='number of cpu threads to use during batch generation')
     parser.add_argument('--img_height', type=int, default=480, help='size of image height')
