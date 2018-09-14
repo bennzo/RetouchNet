@@ -1,14 +1,13 @@
 import torch
 import torch.nn as nn
-from torch.autograd import Variable
-import math
 
 
 class RetouchGenerator(nn.Module):
-    def __init__(self, device):
+    def __init__(self, device, pw_guide):
         super(RetouchGenerator, self).__init__()
 
         self.device = device
+        self.pointwise_guide = pw_guide
 
         ## Define layers as described in the HDRNet architecture
         # Activation
@@ -42,6 +41,12 @@ class RetouchGenerator(nn.Module):
         self.rho_a = nn.Parameter(torch.ones(16,3), requires_grad=True)
         self.rho_t = nn.Parameter(torch.rand(16,3), requires_grad=True)
 
+        # Pointwise guidance map
+        self.pw_conv1 = nn.Conv2d(in_channels=3, out_channels=16, kernel_size=1, stride=1)
+        self.pw_batchnorm = nn.BatchNorm2d(16)
+        self.pw_conv2 = nn.Conv2d(in_channels=16, out_channels=1, kernel_size=1, stride=1)
+        self.pw_activate = nn.Sigmoid()
+
 
     def forward(self, high_res, low_res):
         bg = self.create_bilateral(low_res)
@@ -73,18 +78,27 @@ class RetouchGenerator(nn.Module):
 
         # Bilateral Grid
         pred = self.pred_conv(fusion)
-        bilateral_grid = pred.view(-1, 12, 16, 16, 8)  # Image features as a bilateral grid
+        # bilateral_grid = pred.view(-1, 12, 16, 16, 8)  # Image features as a bilateral grid
+        bilateral_grid = pred.view(-1, 12, 8, 16, 16)   # unroll grid
+        bilateral_grid = bilateral_grid.permute(0,1,3,4,2)
 
         return bilateral_grid
 
     def create_guide(self, high_res):
-        guide = high_res.view(high_res.shape[0], 3, -1)                             # (nbatch, nchannel, w*h)
-        guide = torch.matmul(self.pw_mat, guide)
-        guide = guide + self.pw_bias_tag
-        guide = self.activate(guide.unsqueeze(1) - self.rho_t.view([16, 3, 1]))     # broadcasting to (nbatch, 16, nchannel, w*h)
-        guide = guide.permute(0,3,1,2) * self.rho_a                                 # (nbatch, w*h, 16, nchannel)
-        guide = guide.sum(3).sum(2) + self.pw_bias
-        guide = guide.view(high_res.shape[0],high_res.shape[2],high_res.shape[3])   # return to original shape
+        if not self.pointwise_guide:
+            guide = high_res.view(high_res.shape[0], 3, -1)                             # (nbatch, nchannel, w*h)
+            guide = torch.matmul(self.pw_mat, guide)
+            guide = guide + self.pw_bias_tag
+            guide = self.activate(guide.unsqueeze(1) - self.rho_t.view([16, 3, 1]))     # broadcasting to (nbatch, 16, nchannel, w*h)
+            guide = guide.permute(0,3,1,2) * self.rho_a                                 # (nbatch, w*h, 16, nchannel)
+            guide = guide.sum(3).sum(2) + self.pw_bias
+            guide = guide.view(high_res.shape[0],high_res.shape[2],high_res.shape[3])   # return to original shape
+        else:
+            guide = self.pw_conv1(high_res)
+            guide = self.pw_batchnorm(guide)
+            guide = self.pw_conv2(guide)
+            guide = guide.squeeze()
+            guide = self.pw_activate(guide)
 
         return guide
 

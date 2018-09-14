@@ -2,28 +2,6 @@ import torch
 import torch.nn as nn
 
 
-def weights_init_normal(m):
-    classname = m.__class__.__name__
-    if classname.find('Conv') != -1:
-        torch.nn.init.normal_(m.weight.data, 0.0, 0.02)
-    elif classname.find('BatchNorm2d') != -1:
-        torch.nn.init.normal_(m.weight.data, 1.0, 0.02)
-        torch.nn.init.constant_(m.bias.data, 0.0)
-
-
-def load_or_init_models(m, opt):
-    if opt.netG != '' and type(m).__name__ == 'RetouchGenerator':
-        m.load_state_dict(torch.load(opt.netG))
-    elif opt.netD != '' and type(m).__name__ == 'Discriminator':
-        m.load_state_dict(torch.load(opt.netD))
-    else:
-        m.apply(weights_init_normal)
-
-    return m
-
-
-
-
 ##############################
 #        Discriminator
 ##############################

@@ -2,15 +2,15 @@ import time
 
 import os
 import torch
-import torch.nn as nn
 from collections import defaultdict
 from tensorboardX import SummaryWriter
 from tqdm import tqdm
 
 from data.data import create_loaders
-from general import setup_main, to_variables, ModelSaver, update_stats
-from models.networks import RetouchGenerator
-from models.patch_gan import Discriminator, load_or_init_models
+from main import setup_main
+from utils import to_variables, ModelSaver, update_stats, load_or_init_models
+from models.rt_generator import RetouchGenerator
+from models.patch_gan import Discriminator
 
 
 def trainG(generator, discriminator, criterion_GAN, criterion_pixelwise, optimizer, data, opt):
@@ -67,7 +67,6 @@ def test(generator, discriminator, criterion_GAN, criterion_pixelwise, data, opt
     discriminator.eval()
     x_hr, x_lr, y_hr, y_lr = data
 
-
     # GAN loss
     y_hat = generator(x_hr, x_lr)
     pred_fake = discriminator(y_hat, x_hr)
@@ -88,7 +87,7 @@ def run(opt):
     train_loader, test_loader = create_loaders(opt)
 
     # Initialize generator and discriminator
-    generator = load_or_init_models(RetouchGenerator(opt.device), opt)
+    generator = load_or_init_models(RetouchGenerator(opt.device, opt.pw_guide), opt)
     discriminator = load_or_init_models(Discriminator(), opt)
 
     # Optimizers
@@ -102,7 +101,6 @@ def run(opt):
     # if opt.cuda:
     #     generator = generator.cuda()
     #     discriminator = discriminator.cuda()
-
 
     generator, discriminator, criterion_GAN, criterion_pixelwise = to_variables((generator,
                                                                                  discriminator,
@@ -118,7 +116,6 @@ def run(opt):
     prev_time = time.time()
 
     for epoch in tqdm(range(opt.epoch, opt.n_epochs), desc='Training'):
-
         ####
         # Train
         ###
@@ -131,7 +128,7 @@ def run(opt):
             update_stats(avg_stats, loss_D)
 
 
-    # Log Progress
+        # Log Progress
         str_out = '[train] {}/{} '.format(epoch, opt.n_epochs)
         for k, v in avg_stats.items():
             avg = v / len(train_loader)

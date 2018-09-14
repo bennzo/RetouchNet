@@ -2,12 +2,12 @@
 script to reorganize the dataset to be used by the data loader
 run: python /path/to/dataset 
 """
-
 import argparse
 import shutil
 from pathlib import Path
 import numpy as np
 import os
+
 
 def organize_data(args):
     # make dirs train, test
@@ -46,6 +46,7 @@ def organize_data(args):
     with open(train_dir_input + '/../filelist.txt', 'w+') as fid:
         for f in map(lambda x: x.split('.')[0], os.listdir(train_dir_input)):
             print(f, file=fid)
+
 
 def organize_data_new(args):
     # make filelists dir
