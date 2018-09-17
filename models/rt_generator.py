@@ -1,9 +1,10 @@
-import torch
+import torch 
 import torch.nn as nn
+from torch.autograd import Variable
 
 
 class RetouchGenerator(nn.Module):
-    def __init__(self, device, pw_guide):
+    def __init__(self, device, pw_guide=False):
         super(RetouchGenerator, self).__init__()
 
         self.device = device
@@ -51,7 +52,8 @@ class RetouchGenerator(nn.Module):
     def forward(self, high_res, low_res):
         bg = self.create_bilateral(low_res)
         guide = self.create_guide(high_res)
-        output = self.slice_and_assemble(bg, guide, high_res)
+        #output = self.slice_and_assemble(bg, guide, high_res)
+        output = self.slice_and_assemble_exp(bg, guide, high_res)
         return output
 
     def create_bilateral(self, low_res):
@@ -80,7 +82,6 @@ class RetouchGenerator(nn.Module):
         pred = self.pred_conv(fusion)
         # bilateral_grid = pred.view(-1, 12, 16, 16, 8)  # Image features as a bilateral grid
         bilateral_grid = pred.view(-1, 12, 8, 16, 16)   # unroll grid
-        bilateral_grid = bilateral_grid.permute(0,1,3,4,2)
 
         return bilateral_grid
 
@@ -103,6 +104,7 @@ class RetouchGenerator(nn.Module):
         return guide
 
     def slice_and_assemble(self, bg, guide, high_res):
+        bg = bg.permute(0, 1, 3, 4, 2)
         # clip guide to [-1,1] to comply with 'grid_sample'
         guide = (guide / guide.max(2)[0].max(1)[0].unsqueeze(1).unsqueeze(2))*2 - 1
         bs, gh, gw = guide.shape
@@ -127,12 +129,48 @@ class RetouchGenerator(nn.Module):
 
         return output
 
+    def slice_and_assemble_exp(self, grid, guide, input):
+        bs,c,gd,gw,gh = grid.shape
+        _,ci,h,w = input.shape
 
+        xx = Variable(torch.arange(0, w).cuda().view(1, -1).repeat(h, 1))
+        yy = Variable(torch.arange(0, h).cuda().view(-1, 1).repeat(1, w))
+        gx = ((xx + 0.5) / w) * gw
+        gy = ((yy + 0.5) / h) * gh
+        gz = torch.clamp(guide, 0.0, 1.0) * gd
+        fx = torch.clamp(torch.floor(gx - 0.5), min=0)
+        fy = torch.clamp(torch.floor(gy - 0.5), min=0)
+        fz = torch.clamp(torch.floor(gz - 0.5), min=0)
+        wx = gx - 0.5 - fx
+        wy = gy - 0.5 - fy
+        wx = wx.unsqueeze(0).unsqueeze(0)
+        wy = wy.unsqueeze(0).unsqueeze(0)
+        wz = torch.abs(gz - 0.5 - fz)
+        wz = wz.unsqueeze(1)
+        fx = fx.long().unsqueeze(0).unsqueeze(0)
+        fy = fy.long().unsqueeze(0).unsqueeze(0)
+        fz = fz.long()
+        cx = torch.clamp(fx + 1, max=gw - 1);
+        cy = torch.clamp(fy + 1, max=gh - 1);
+        cz = torch.clamp(fz + 1, max=gd - 1)
+        fz = fz.view(bs, 1, h, w)
+        cz = cz.view(bs, 1, h, w)
+        batch_idx = torch.arange(bs).view(bs, 1, 1, 1).long().cuda()
+        out = []
+        co = c // (ci + 1)
+        for c_ in range(co):
+            c_idx = torch.arange((ci + 1) * c_, (ci + 1) * (c_ + 1)).view( \
+                1, ci + 1, 1, 1).long().cuda()
+            a = grid[batch_idx, c_idx, fz, fy, fx] * (1 - wx) * (1 - wy) * (1 - wz) + \
+                grid[batch_idx, c_idx, cz, fy, fx] * (1 - wx) * (1 - wy) * (wz) + \
+                grid[batch_idx, c_idx, fz, cy, fx] * (1 - wx) * (wy) * (1 - wz) + \
+                grid[batch_idx, c_idx, cz, cy, fx] * (1 - wx) * (wy) * (wz) + \
+                grid[batch_idx, c_idx, fz, fy, cx] * (wx) * (1 - wy) * (1 - wz) + \
+                grid[batch_idx, c_idx, cz, fy, cx] * (wx) * (1 - wy) * (wz) + \
+                grid[batch_idx, c_idx, fz, cy, cx] * (wx) * (wy) * (1 - wz) + \
+                grid[batch_idx, c_idx, cz, cy, cx] * (wx) * (wy) * (wz)
+            o = torch.sum(a[:, :-1, ...] * input, 1) + a[:, -1, ...]
+            out.append(o.unsqueeze(1))
+        out = torch.cat(out, 1)
 
-
-
-
-
-
-
-
+        return out

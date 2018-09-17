@@ -91,8 +91,8 @@ def run(opt):
     discriminator = load_or_init_models(Discriminator(), opt)
 
     # Optimizers
-    optimizer_G = torch.optim.Adam(generator.parameters(), lr=opt.lr, betas=(opt.b1, opt.b2))
-    optimizer_D = torch.optim.Adam(discriminator.parameters(), lr=opt.lr, betas=(opt.b1, opt.b2))
+    optimizer_G = torch.optim.Adam(generator.parameters(), lr=opt.lr)
+    optimizer_D = torch.optim.Adam(discriminator.parameters(), lr=opt.lr)
 
     # Losses
     # criterion_GAN = torch.nn.MSELoss()
